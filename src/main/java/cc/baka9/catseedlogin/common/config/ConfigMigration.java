@@ -8,11 +8,10 @@ import java.util.logging.Logger;
 /**
  * 旧版 config.yml 路径迁移。
  *
- * <p>配置文件重新归组后：settings 拆分为 account / before-login / login 三个子分组，
- * 依赖数据库记录的配置项（IP 数量限制、死亡退出位置记录、同IP免登录）下沉到 database 节点。
+ * <p>配置文件重新归组后：settings 拆分为 account / before-login / login 三个子分组， 原先散落在 settings 与顶层 same-ip-login
+ * 下、依赖账号表记录的配置项（IP 数量限制、死亡退出位置记录、 同IP免登录）作为登录流程的一部分归入 settings.login。
  *
- * <p>旧版配置文件里这些值仍在老路径上，如果直接读取新路径就会静默回退到默认值，
- * 等于用户升级后配置被重置。这里在加载（并补全默认值）之后把旧路径的值搬到新路径。
+ * <p>旧版配置文件里这些值仍在老路径上，如果直接读取新路径就会静默回退到默认值， 等于用户升级后配置被重置。这里在加载（并补全默认值）之后把旧路径的值搬到新路径。
  */
 public final class ConfigMigration {
 
@@ -25,15 +24,15 @@ public final class ConfigMigration {
   private static final String[] LEGACY_SECTIONS = {"same-ip-login", "settings"};
 
   static {
-    // 依赖数据库记录的配置 -> database
+    // settings / same-ip-login -> settings.login
     LEGACY_PATHS.put(
-        "settings.ip-register-count-limit", ConfigConstants.Path.DATABASE_IP_REGISTER_LIMIT);
-    LEGACY_PATHS.put("settings.ip-count-limit", ConfigConstants.Path.DATABASE_IP_COUNT_LIMIT);
+        "settings.ip-register-count-limit", ConfigConstants.Path.SETTINGS_LOGIN_IP_REGISTER_LIMIT);
+    LEGACY_PATHS.put("settings.ip-count-limit", ConfigConstants.Path.SETTINGS_LOGIN_IP_COUNT_LIMIT);
     LEGACY_PATHS.put(
         "settings.death-state-quit-record-location",
-        ConfigConstants.Path.DATABASE_DEATH_STATE_QUIT_RECORD);
-    LEGACY_PATHS.put("same-ip-login.enabled", ConfigConstants.Path.DATABASE_SAME_IP_ENABLED);
-    LEGACY_PATHS.put("same-ip-login.timeout", ConfigConstants.Path.DATABASE_SAME_IP_TIMEOUT);
+        ConfigConstants.Path.SETTINGS_LOGIN_DEATH_STATE_QUIT_RECORD);
+    LEGACY_PATHS.put("same-ip-login.enabled", ConfigConstants.Path.SETTINGS_LOGIN_SAME_IP_ENABLED);
+    LEGACY_PATHS.put("same-ip-login.timeout", ConfigConstants.Path.SETTINGS_LOGIN_SAME_IP_TIMEOUT);
 
     // settings -> settings.account
     LEGACY_PATHS.put(
@@ -71,8 +70,7 @@ public final class ConfigMigration {
   /**
    * 将配置中仍存在的旧路径迁移到新路径。
    *
-   * <p>分两步执行：先把旧路径的值全部读出来缓存，再按对照表写回新路径。
-   * 读与写分开可以避免边遍历边修改配置导致的结果依赖遍历顺序。
+   * <p>分两步执行：先把旧路径的值全部读出来缓存，再按对照表写回新路径。 读与写分开可以避免边遍历边修改配置导致的结果依赖遍历顺序。
    *
    * @return 配置是否发生了改动（需要回写文件）
    */
